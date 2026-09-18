@@ -61,7 +61,8 @@ X_ACCOUNTS = [
     # Commentary worth reading
     "emollick", "simonw", "swyx", "amasad",
 ]
-X_SEARCH_TERMS = []          # keep empty — each term is a separate paid query
+X_SEARCH_TERMS = []          # extra raw queries, added on top of the handles
+X_HANDLES_PER_QUERY = 5      # batched with OR — fewer queries, lower minimum fees
 X_MIN_LIKES = 100            # engagement floor; smaller accounts need a lower bar
 X_MAX_ITEMS = 400            # hard cap on results = hard cap on spend (~$3/mo)
 
@@ -144,23 +145,39 @@ def _first(obj, *paths):
     return None
 
 
+def build_x_queries(cutoff_dt):
+    """Turn X_ACCOUNTS into X advanced-search queries.
+
+    This actor has no "handles" field — you drive it through Search Terms using
+    X's own syntax. Handles are batched with OR because the actor charges a
+    minimum per query, so 4 queries cost far less than 20.
+    """
+    since = cutoff_dt.strftime("%Y-%m-%d_%H:%M:%S_UTC")
+    terms = []
+    for i in range(0, len(X_ACCOUNTS), X_HANDLES_PER_QUERY):
+        batch = X_ACCOUNTS[i:i + X_HANDLES_PER_QUERY]
+        ors = " OR ".join(f"from:{h}" for h in batch)
+        terms.append(f"({ors}) since:{since}")
+    return terms + list(X_SEARCH_TERMS)
+
+
 def fetch_x(cutoff_dt):
     """Pull recent posts from selected X accounts via an Apify actor.
 
-    Actor input schemas differ between actors and change over time. If you
-    swap actors, open the actor page on Apify, click the API button, and copy
-    the generated input JSON into `payload` below.
+    Input schemas differ between actors. If you swap actors, open its Input tab
+    in Apify Console, switch Form -> JSON, and copy the real key names here.
     """
     if not APIFY_TOKEN:
         log("X: no APIFY_TOKEN set, skipping")
         return []
 
+    queries = build_x_queries(cutoff_dt)
+    log(f"X: {len(queries)} queries, e.g. {queries[0][:90]}")
+
     payload = {
-        "twitterHandles": X_ACCOUNTS,
-        "searchTerms": X_SEARCH_TERMS,
+        "searchTerms": queries,
         "maxItems": X_MAX_ITEMS,
-        "start": cutoff_dt.strftime("%Y-%m-%d"),
-        "sort": "Latest",
+        "queryType": "Latest",
         "tweetLanguage": "en",
     }
 
@@ -179,6 +196,17 @@ def fetch_x(cutoff_dt):
 
     if rows and isinstance(rows[0], dict):
         log(f"X: field names in first row -> {sorted(rows[0].keys())}")
+
+    # Some actors bill a minimum per call and return filler rows when a query
+    # matches nothing. Treat that as an input-schema failure, not as data.
+    real = [t for t in rows if isinstance(t, dict)
+            and "mock" not in str(t.get("type", "")).lower()]
+    if rows and not real:
+        log("X: actor returned only mock/filler rows — the query matched nothing.")
+        log("X: your `payload` field names are wrong for this actor. Run it once")
+        log("X: in Apify Console, click API, and copy the generated input JSON.")
+        return []
+    rows = real
 
     out = []
     for t in rows:
