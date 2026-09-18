@@ -177,6 +177,9 @@ def fetch_x(cutoff_dt):
         log(f"X: fetch failed: {e}")
         return []
 
+    if rows and isinstance(rows[0], dict):
+        log(f"X: field names in first row -> {sorted(rows[0].keys())}")
+
     out = []
     for t in rows:
         text = _first(t, "text", "full_text", "content")
@@ -203,6 +206,10 @@ def fetch_x(cutoff_dt):
             "source": f"X @{handle} ({likes} likes)",
             "summary": flat[:400],
         })
+
+    if rows and not out:
+        log("X: everything was filtered out. First row was:")
+        log(json.dumps(rows[0], default=str)[:1200])
 
     log(f"X: {len(out)} items from {len(rows)} fetched")
     return out
