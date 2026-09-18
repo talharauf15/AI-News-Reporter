@@ -275,7 +275,7 @@ def fetch_rss(cutoff_dt):
 
 # ---------------------------------------------------------------- the LLM
 
-PROMPT = """You are curating a daily briefing for a working AI/ML engineer who \
+PROMPT = """You are curating a daily briefing for a working AI/ML/Software engineer who \
 wants to stay current with the industry.
 
 Below are {n} items collected in the last 24 hours. Your job:
