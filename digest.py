@@ -14,6 +14,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from itertools import zip_longest
 
 import feedparser
 import requests
@@ -319,6 +320,20 @@ def send_discord(entries):
 
 # ---------------------------------------------------------------- main
 
+def interleave(groups):
+    """Round-robin the sources together.
+
+    Matters because `fresh` gets truncated to MAX_ITEMS_TO_LLM. Plain
+    concatenation would put whichever source ran last at the tail, and a busy
+    news day would silently drop all of it. Interleaving makes the cut
+    proportional instead.
+    """
+    out = []
+    for row in zip_longest(*groups):
+        out.extend(item for item in row if item is not None)
+    return out
+
+
 def main():
     missing = [k for k, v in
                [("OPENAI_API_KEY", OPENAI_KEY), ("DISCORD_WEBHOOK_URL", DISCORD_WEBHOOK)]
@@ -331,7 +346,11 @@ def main():
     cutoff_ts = int(cutoff_dt.timestamp())
 
     log("Fetching...")
-    raw = fetch_hackernews(cutoff_ts) + fetch_rss(cutoff_dt) + fetch_x(cutoff_dt)
+    raw = interleave([
+        fetch_hackernews(cutoff_ts),
+        fetch_rss(cutoff_dt),
+        fetch_x(cutoff_dt),
+    ])
     log(f"Collected {len(raw)} raw items")
 
     seen = load_seen()
