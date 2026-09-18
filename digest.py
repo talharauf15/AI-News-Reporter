@@ -22,7 +22,7 @@ import requests
 # ---------------------------------------------------------------- config
 
 LOOKBACK_HOURS = 26          # slight overlap with the 24h schedule, dedupe handles it
-MAX_ITEMS_TO_LLM = 120       # cap so one noisy day can't blow up the token bill
+MAX_ITEMS_TO_LLM = 180       # cap so one noisy day can't blow up the token bill
 MIN_ITEMS_TO_SEND = 3        # below this, stay quiet rather than send a junk digest
 HN_MIN_POINTS = 40
 SEEN_FILE = "seen.json"
@@ -51,12 +51,19 @@ APIFY_ACTOR = os.environ.get(
     "kaitoeasyapi~twitter-x-data-tweet-scraper-pay-per-result-cheapest",
 )
 X_ACCOUNTS = [
-    "sama", "karpathy", "AnthropicAI", "OpenAI", "GoogleDeepMind",
-    "ylecun", "_akhaliq", "emollick",
+    # Labs and official
+    "OpenAI", "AnthropicAI", "GoogleDeepMind", "MistralAI", "huggingface",
+    # Researchers and builders
+    "sama", "karpathy", "ylecun", "JeffDean", "goodfellow_ian",
+    "jackclarkSF", "drjimfan", "hardmaru",
+    # Paper and release trackers
+    "_akhaliq", "arankomatsuzaki", "rohanpaul_ai",
+    # Commentary worth reading
+    "emollick", "simonw", "swyx", "amasad",
 ]
-X_SEARCH_TERMS = []          # e.g. ["new AI model release"] — costs extra results
-X_MIN_LIKES = 150            # noise filter; raise if the digest feels shallow
-X_MAX_ITEMS = 200            # hard cap on results = hard cap on spend
+X_SEARCH_TERMS = []          # keep empty — each term is a separate paid query
+X_MIN_LIKES = 100            # engagement floor; smaller accounts need a lower bar
+X_MAX_ITEMS = 400            # hard cap on results = hard cap on spend (~$3/mo)
 
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.6-luna")
