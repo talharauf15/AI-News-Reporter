@@ -2,8 +2,10 @@ name: AI Digest
 
 on:
   schedule:
-    # 08:00 UTC = 13:00 Pakistan time. Change the hour to suit you.
-    - cron: "0 8 * * *"
+    # 03:17 UTC = 08:17 Pakistan time. Scheduled early because GitHub starts
+    # scheduled runs 4-6h late; aim is to land around 13:00 PKT. Off-the-hour
+    # minute avoids the :00 rush.
+    - cron: "17 3 * * *"
   workflow_dispatch:        # lets you run it manually from the Actions tab
 
 permissions:
