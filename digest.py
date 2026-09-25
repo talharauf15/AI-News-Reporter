@@ -50,19 +50,20 @@ APIFY_ACTOR = os.environ.get(
     "APIFY_ACTOR",
     "kaitoeasyapi~twitter-x-data-tweet-scraper-pay-per-result-cheapest",
 )
+# Accounts that announce things, not accounts that mostly share opinions —
+# the prompt drops opinion posts anyway, so they only cost money.
 X_ACCOUNTS = [
-    # Labs and official
-    "OpenAI", "AnthropicAI", "GoogleDeepMind", "MistralAI", "huggingface",
-    # Researchers and builders
-    "sama", "karpathy", "ylecun", "JeffDean", "goodfellow_ian",
-    "jackclarkSF", "drjimfan", "hardmaru",
-    # Paper and release trackers
-    "_akhaliq", "arankomatsuzaki", "rohanpaul_ai",
-    # Commentary worth reading
-    "emollick", "simonw", "swyx", "amasad",
+    # Labs and official product accounts
+    "OpenAI", "OpenAIDevs", "AnthropicAI", "claudeai", "GoogleDeepMind",
+    "GeminiApp", "xai", "AIatMeta", "MistralAI", "Alibaba_Qwen",
+    "deepseek_ai", "NVIDIAAI", "huggingface", "cursor_ai",
+    # Builders who ship and announce their own products
+    "trq212", "amasad",
+    # Builders and release trackers
+    "karpathy", "simonw", "_akhaliq", "rohanpaul_ai", "arankomatsuzaki",
 ]
 X_SEARCH_TERMS = []          # extra raw queries, added on top of the handles
-X_HANDLES_PER_QUERY = 5      # batched with OR — fewer queries, lower minimum fees
+X_HANDLES_PER_QUERY = 6      # batched with OR — fewer queries, lower minimum fees
 X_MIN_LIKES = 100            # engagement floor; smaller accounts need a lower bar
 X_MAX_ITEMS = 400            # hard cap on results = hard cap on spend (~$3/mo)
 
@@ -157,7 +158,8 @@ def build_x_queries(cutoff_dt):
     for i in range(0, len(X_ACCOUNTS), X_HANDLES_PER_QUERY):
         batch = X_ACCOUNTS[i:i + X_HANDLES_PER_QUERY]
         ors = " OR ".join(f"from:{h}" for h in batch)
-        terms.append(f"({ors}) since:{since}")
+        # Replies are billed per result but are never the announcement itself.
+        terms.append(f"({ors}) -filter:replies since:{since}")
     return terms + list(X_SEARCH_TERMS)
 
 
