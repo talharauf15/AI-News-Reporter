@@ -61,10 +61,13 @@ X_ACCOUNTS = [
     "trq212", "amasad",
     # Builders and release trackers
     "karpathy", "simonw", "_akhaliq", "rohanpaul_ai", "arankomatsuzaki",
+    "VaibhavSisinty",
 ]
 X_SEARCH_TERMS = []          # extra raw queries, added on top of the handles
 X_HANDLES_PER_QUERY = 6      # batched with OR — fewer queries, lower minimum fees
 X_MIN_LIKES = 100            # engagement floor; smaller accounts need a lower bar
+# Per-account floor for smaller accounts worth reading. Keys are lowercase.
+X_MIN_LIKES_BY_HANDLE = {"vaibhavsisinty": 10}
 X_MAX_ITEMS = 400            # hard cap on results = hard cap on spend (~$3/mo)
 
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
@@ -222,12 +225,11 @@ def fetch_x(cutoff_dt):
             likes = int(likes)
         except (TypeError, ValueError):
             likes = 0
-        if likes < X_MIN_LIKES:
-            continue
-
         handle = _first(
             t, "author.userName", "author.screen_name", "username", "screenName"
         ) or "x"
+        if likes < X_MIN_LIKES_BY_HANDLE.get(handle.lower(), X_MIN_LIKES):
+            continue
 
         flat = " ".join(text.split())
         out.append({
