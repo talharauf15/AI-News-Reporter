@@ -189,7 +189,7 @@ def fetch_x(cutoff_dt):
     url = f"https://api.apify.com/v2/acts/{APIFY_ACTOR}/run-sync-get-dataset-items"
     try:
         r = requests.post(
-            url, params={"token": APIFY_TOKEN}, json=payload, timeout=300
+            url, params={"token": APIFY_TOKEN, "build": "latest"}, json=payload, timeout=300
         )
         if r.status_code >= 400:
             log(f"X: Apify returned {r.status_code}: {r.text[:300]}")
